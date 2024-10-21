@@ -1,0 +1,55 @@
+form {
+    margin-bottom: 20px;
+}
+
+input {
+    margin: 10px;
+    padding: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    color: #800080;
+    height: 30px;
+}
+
+select {
+    margin: 10px;
+    padding: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    color: #800080;
+    height: 45px;
+}
+
+button {
+    background-color: #800080;
+    border-radius: 5px;
+    font-size: 17px;
+    height: 40px;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+button:hover {
+    background-color: #6e036e;
+}
+
+.book-fields{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.book-table{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.form-button-action{
+display: flex;
+    flex-direction: row;}
