@@ -23,6 +23,7 @@ function AddBookForm({ addBook }) {
 
   const [selectedRows,setSelectedRows] = useState(new Set())
   const [selectAll,setSelectAll] = useState(new Set())
+  const [isActive,setIsActive]=useState(false)
 
   const genres = [
     'Action',
@@ -49,8 +50,6 @@ function AddBookForm({ addBook }) {
   }, []);
 
   const handleCheckboxChange = (event) => {
-    console.log("event",event)
-    console.log("event id",event.id)
     setSelectedItem(event); 
     setDeleteId(event.id)
     setSelectedRows((prev) => {
@@ -63,7 +62,6 @@ function AddBookForm({ addBook }) {
       return newSelection;
     });
   };
-
   
 
   const getAllBooks = async () => {
@@ -72,7 +70,6 @@ function AddBookForm({ addBook }) {
         .then((response) => {
           if (response && response.data) {
             setBooksList(response.data);
-            console.log("response", response.data);
           }
         })
     } catch (error) {
@@ -80,17 +77,12 @@ function AddBookForm({ addBook }) {
     }
   }
 
-  const handleAddBooks = () => {
-
-  }
-
-  const handleDelete = (event) =>{
-
-  }
 
   const handleEdit = (item) => {
+    setIsActive(true);
    setId(item.id);
    setTitle(item.title);
+   setAuthor(item.author);
    setGenre(item.genre);
    setYear(item.year);
   }
@@ -124,6 +116,10 @@ function AddBookForm({ addBook }) {
   }
     const handleChangeYear= (event) =>{
       const value = event.target.value;
+      const yearRegex= /^\d{4}$/
+      if(!yearRegex.test(value)){
+        setYearErr("Please provide valid information");
+      }
       if(value.length===0){
         setYearErr("Please provide valid information");
       }else{
@@ -134,6 +130,7 @@ function AddBookForm({ addBook }) {
 
 
   const handleSubmit = async (e) => {
+    setIsActive(false)
     let isValid = false;
     e.preventDefault();
     if (title.trim() && author.trim() && genre.trim() && year.trim()) {
@@ -176,7 +173,6 @@ function AddBookForm({ addBook }) {
           }
         );
         const result = await response.json();
-        console.log("response",result);
         getAllBooks();
       } catch (error) {
       }
@@ -184,8 +180,55 @@ function AddBookForm({ addBook }) {
     }
   };
 
-  const DeleteBook = () =>{
-    console.log("ID",deleteId)
+  const handleClearForm=()=>{
+    setTitle('');
+    setAuthor('');
+    setGenre('');
+    setYear('');
+    setIsActive(false)
+  }
+
+  const handleUpdate = async () => {
+    const requestBody = {
+      title: title,
+      author: author,
+      genre: genre,
+      year: year,
+    };
+  
+    try {
+      const res = await axios.put(
+        `http://localhost:5000/api/updateBooks/${id}`,
+        requestBody
+      );
+  
+      if (res && res.data && res.status === 200) {
+        getAllBooks(); // Refresh the list of books
+        handleClearForm(); // Clear the form after updating the book
+        Swal.fire({
+          title: "GOOD JOB!",
+          text: "Book updated successfully!",
+          icon: "success",
+        });
+      } else {
+        Swal.fire({
+          title: "BAD JOB!",
+          text: "Something went wrong, please try again!",
+          icon: "error",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to update the book. Please check the inputs or try again later.",
+        icon: "error",
+      });
+    }
+  };
+  
+ 
+  const DeleteBook = (event) =>{
+    const id=event.id;
     try {
       Swal.fire({
           title: "Are you sure?",
@@ -199,12 +242,12 @@ function AddBookForm({ addBook }) {
           if (result.isConfirmed) {
               axios({
                   method: "delete",
-                  url: `http://localhost:5000/api/deleteBooks/${deleteId}`,
+                  url: `http://localhost:5000/api/deleteBooks/${id}`,
                   responseType: "stream",
               }).then(function (response) {
                   Swal.fire({
                       title: "GOOD JOB!",
-                      text: "Loader deleted successfully!",
+                      text: "Book deleted successfully!",
                       icon: "success"
                   });
                   // getAllLoader(pageNo, pageSize);
@@ -249,7 +292,7 @@ function AddBookForm({ addBook }) {
         onChange={handleChangeAuthor}
         placeholder="Author"
         required />
-         {titleErr && <p style={{ color: 'red' }}>{titleErr}</p>}
+         {authorErr && <p style={{ color: 'red' }}>{authorErr}</p>}
          </div>
          
          <div className='genre-field'>
@@ -266,7 +309,7 @@ function AddBookForm({ addBook }) {
           </option>
         ))}
       </select>
-      {titleErr && <p style={{ color: 'red' }}>{titleErr}</p>}
+      {genreErr && <p style={{ color: 'red' }}>{genreErr}</p>}
       </div>
       
       <div className='year-field'>
@@ -278,9 +321,16 @@ function AddBookForm({ addBook }) {
         onChange={handleChangeYear}
         placeholder="Publication Year"
         required />
-         {titleErr && <p style={{ color: 'red' }}>{titleErr}</p>}
+         {yearErr && <p style={{ color: 'red' }}>{yearErr}</p>}
          </div>
-      <button type="submit">Add Book</button>
+         {!isActive ? (
+    <button type="submit">Add Book</button>
+) : (
+    <>
+        <button type="submit" onClick={handleUpdate}>Update Book</button>
+        <button type="button" onClick={handleClearForm}>Cancel</button>
+    </>
+)}
       {error && <p className="error-message">{error}</p>} {/* Display error message */}
       </div>
     </form>
@@ -292,13 +342,13 @@ function AddBookForm({ addBook }) {
     <table className="table table-striped">
         <thead>
           <tr>
-            <th style={{width:"5%"}}>
+            {/* <th style={{width:"5%"}}>
               <input
                 type="checkbox"
                 id="selectAll"
                 
               />
-            </th>
+            </th> */}
             <th  style={{width:"5%"}}>
               Sr.No
             </th>
@@ -327,12 +377,12 @@ function AddBookForm({ addBook }) {
           ) : (
             booksList && booksList.map((item, index) => (
               <tr key={item.id}>
-                <td>
+                {/* <td>
                   <input
                     type="checkbox"
                     checked={selectedRows.has(item.id)}
                     onChange={() => handleCheckboxChange(item)} />
-                </td>
+                </td> */}
                  <td>{index + 1}</td>
                 {/* Conditionally render Name data */}
                  <td>{item.title}</td>
@@ -344,21 +394,21 @@ function AddBookForm({ addBook }) {
 
                 <td>
                   <div className="form-button-action">
-                    {/* <button
+                   <button
                       type="button"
                       data-bs-toggle="tooltip"
                       title="Edit Task"
                       className="btn btn-link btn-primary btn-lg"
-                      // onClick={() => handleEdit(item)}
+                      onClick={() => handleEdit(item)}
                     >
                       Edit
-                    </button> */}
+                    </button> 
                     <button
                       type="button"
                       data-bs-toggle="tooltip"
                       title="Remove"
                       className="btn btn-link btn-danger"
-                      onClick={ DeleteBook}
+                      onClick={()=>DeleteBook(item)}
                     >
                       Delete
                     </button>
